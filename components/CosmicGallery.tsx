@@ -1,5 +1,5 @@
-// src/components/CosmicGallery.tsx
 import GalleryClient from "./GalleryClient";
+import VideoPlayer from "./VideoPlayer";
 
 // 1. Fungsi Fetch Gambar
 async function getCloudinaryImages() {
@@ -28,7 +28,7 @@ async function getCloudinaryImages() {
         },
         body: JSON.stringify({
           expression: "resource_type:image",
-          max_results: 67, // Mengambil hingga 67 gambar
+          max_results: 67,
           sort_by: [{ created_at: "desc" }],
         }),
         cache: "no-store",
@@ -44,7 +44,7 @@ async function getCloudinaryImages() {
   }
 }
 
-// 2. Fungsi Fetch Video Baru
+// 2. Fungsi Fetch Video
 async function getCloudinaryVideo() {
   const cloudName =
     process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -68,7 +68,7 @@ async function getCloudinaryVideo() {
         },
         body: JSON.stringify({
           expression: "resource_type:video",
-          max_results: 1, // Kita hanya ambil 1 video terbaru untuk highlight
+          max_results: 1,
           sort_by: [{ created_at: "desc" }],
         }),
         cache: "no-store",
@@ -77,7 +77,7 @@ async function getCloudinaryVideo() {
 
     if (!response.ok) return null;
     const data = await response.json();
-    return data.resources[0] || null; // Kembalikan objek video pertama (terbaru)
+    return data.resources[0] || null;
   } catch (error) {
     console.error("🚨 ERROR FETCH VIDEO:", error);
     return null;
@@ -86,29 +86,35 @@ async function getCloudinaryVideo() {
 
 // 3. Komponen Utama
 export default async function CosmicGallery() {
-  // Menjalankan fetch gambar dan video secara bersamaan (paralel) agar lebih cepat
   const [rawImages, rawVideo] = await Promise.all([
     getCloudinaryImages(),
     getCloudinaryVideo(),
   ]);
 
-  // Format Data Gambar
-  const formattedImages = rawImages.map((res: any) => ({
-    public_id: res.public_id,
-    src: res.secure_url.replace(
-      "/upload/",
-      "/upload/q_auto,f_auto/",
-    ),
-    width: res.width,
-    height: res.height,
-  }));
+  // Perbaikan TypeScript: Memberikan struktur data yang jelas untuk 'res'
+  const formattedImages = rawImages.map(
+    (res: {
+      public_id: string;
+      secure_url: string;
+      width: number;
+      height: number;
+    }) => ({
+      public_id: res.public_id,
+      src: res.secure_url.replace(
+        "/upload/",
+        "/upload/q_auto,f_auto/",
+      ),
+      width: res.width,
+      height: res.height,
+    }),
+  );
 
-  // Format Data Video (Jika Ada)
-  let videoData = null;
+  // Perbaikan TypeScript: Deklarasi tipe eksplisit untuk videoData
+  let videoData: { src: string; poster: string } | null =
+    null;
   if (rawVideo) {
     videoData = {
       src: rawVideo.secure_url,
-      // Cloudinary otomatis membuat thumbnail frame pertama dengan mengubah ekstensi ke .jpg
       poster: rawVideo.secure_url.replace(
         /\.[^/.]+$/,
         ".jpg",
@@ -125,25 +131,17 @@ export default async function CosmicGallery() {
           Cosmic Gallery
         </h2>
 
-        {/* Render Bagian Video Kenangan HANYA jika video ditemukan di Cloudinary */}
         {videoData && (
           <div className="mb-24 relative group">
             <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(244,114,182,0.15)] bg-black">
-              <video
-                controls
-                className="w-full h-full object-contain"
-                poster={videoData.poster}>
-                <source
-                  src={videoData.src}
-                  type="video/mp4"
-                />
-                Your browser does not support the video tag.
-              </video>
+              <VideoPlayer
+                src={videoData.src}
+                poster={videoData.poster}
+              />
             </div>
           </div>
         )}
 
-        {/* Bagian Grid Foto Interaktif */}
         {formattedImages.length > 0 ? (
           <GalleryClient images={formattedImages} />
         ) : (

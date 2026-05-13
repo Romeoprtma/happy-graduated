@@ -50,7 +50,7 @@ export const MEMORIES: Memory[] = [
     title: "The Brightest Star",
     date: "13 Mei 2026",
     description: "Hari ini semesta merayakanmu. Kamu bukan lagi sekadar bintang, tapi pusat dari kebanggaanku. Selamat wisuda, Sayang ndut! ❤️",
-    imageUrl: "/images/wisudah.jpg",
+    imageUrl: "/images/4.jpeg",
     side: "right"
   },
 ];

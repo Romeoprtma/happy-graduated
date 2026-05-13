@@ -44,10 +44,26 @@ export default function MusicPlayer() {
       }),
     );
 
-    // Cleanup listener saat komponen dilepas
+    // 👇 FUNGSI BARU: Untuk mematikan lagu saat menerima sinyal dari VideoPlayer
+    const handleVideoPlay = () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false); // Ubah ikon kembali ke mode Music
+      }
+    };
+
+    // Pasang "telinga" untuk mendengarkan event 'pauseMusic' dari VideoPlayer
+    window.addEventListener("pauseMusic", handleVideoPlay);
+
+    // Cleanup listener saat komponen dilepas (Best Practice React)
     return () => {
       ["click", "touchstart", "scroll"].forEach((event) =>
         window.removeEventListener(event, attemptPlay),
+      );
+      // Lepas "telinga" agar tidak terjadi memory leak
+      window.removeEventListener(
+        "pauseMusic",
+        handleVideoPlay,
       );
     };
   }, []);
