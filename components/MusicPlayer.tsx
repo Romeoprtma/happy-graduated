@@ -8,11 +8,48 @@ export default function MusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Mengatur volume lagu agar tidak terlalu keras (opsional)
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = 0.5; // Set volume di 50%
-    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // Mengatur volume lagu agar syahdu (50%)
+    audio.volume = 0.5;
+
+    // Fungsi cerdas untuk mencoba memutar lagu
+    const attemptPlay = async () => {
+      try {
+        await audio.play();
+        setIsPlaying(true);
+
+        // Jika berhasil berputar, hapus "jebakan" agar tidak memberatkan browser
+        ["click", "touchstart", "scroll"].forEach((event) =>
+          window.removeEventListener(event, attemptPlay),
+        );
+      } catch (error) {
+        // Jika gagal karena diblokir browser, jangan panik.
+        // Lagu akan menunggu interaksi pertama dari user.
+        console.warn(
+          "Menunggu interaksi pertama untuk memutar lagu...",
+        );
+      }
+    };
+
+    // 1. Coba putar langsung saat web pertama kali dimuat
+    attemptPlay();
+
+    // 2. Pasang "jebakan" interaksi. Begitu dia klik, scroll, atau sentuh layar, lagu menyala!
+    ["click", "touchstart", "scroll"].forEach((event) =>
+      window.addEventListener(event, attemptPlay, {
+        once: true,
+      }),
+    );
+
+    // Cleanup listener saat komponen dilepas
+    return () => {
+      ["click", "touchstart", "scroll"].forEach((event) =>
+        window.removeEventListener(event, attemptPlay),
+      );
+    };
   }, []);
 
   const togglePlay = () => {
